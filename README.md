@@ -6,7 +6,7 @@ An autonomous H5 mini-game ecosystem architected by **Hermes Agent** and enginee
 
 | Game Directory | Title | Genre / Mechanics | Status |
 |---|---|---|---|
-| *(Games will be added automatically via pipeline)* | | | |
+| [`games/neon-xe-om-drift`](./games/neon-xe-om-drift) | Neon Xe Ôm: Sài Gòn 2087 | Arcade / Endless Traffic-Weaver (Cyberpunk Saigon, Near-Miss Combo, WebAudio SFX) | ✅ Ready |
 
 ## 🏗 Architecture & Design Standards
 - **Resolution & Rendering:** Native 1080x1920 Full HD Canvas / Procedural Vector Graphics / CSS GPU-accelerated layers.

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Neon Xe Ôm: Sài Gòn 2087</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Overlay Start / Menu Screen -->
+    <div id="screen-menu" class="ui-screen active">
+      <div class="glow-title">
+        <h1 class="flicker-text">NEON XE ÔM</h1>
+        <p class="tagline">Sài Gòn 2087 — Luồn Không Chạm</p>
+      </div>
+      <div class="menu-stats">
+        <div class="stat-box">
+          <span class="stat-label">KỶ LỤC ĐIỂM</span>
+          <span id="menu-highscore" class="stat-val">0</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-label">NEAR-MISSES</span>
+          <span id="menu-total-nearmiss" class="stat-val">0</span>
+        </div>
+      </div>
+      <div class="instructions">
+        <p>📱 <b>Chạm/Giữ Trái/Phải:</b> Luồn lách chuyển làn</p>
+        <p>⚡ <b>Nhấn đúp / Phím Space:</b> Kích hoạt Turbo khi đầy meter</p>
+        <p>🎯 <b>Né sát xe (Near-Miss):</b> Tăng điểm Combo x8 & sạc Turbo cực nhanh</p>
+      </div>
+      <button id="btn-start" class="neon-btn pulse">BẮT ĐẦU CHẠY</button>
+      <div class="settings-row">
+        <button id="btn-sound-toggle" class="icon-btn" title="Bật/Tắt Âm Thanh">🔊</button>
+      </div>
+    </div>
+
+    <!-- Overlay Game Over Screen -->
+    <div id="screen-gameover" class="ui-screen hidden">
+      <div class="gameover-card">
+        <h2 class="danger-title">TAI NẠN RỒI!</h2>
+        <div id="medal-badge" class="medal-badge medal-bronze">ĐỒNG</div>
+        <div class="final-score-box">
+          <span class="score-label">ĐIỂM ĐẠT ĐƯỢC</span>
+          <span id="go-score" class="score-number">0</span>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-name">Quãng đường</span>
+            <span id="go-distance" class="stat-data">0m</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Near-miss</span>
+            <span id="go-nearmiss" class="stat-data">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Max Combo</span>
+            <span id="go-maxcombo" class="stat-data">x1</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-name">Kỷ lục cũ</span>
+            <span id="go-best" class="stat-data">0</span>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button id="btn-restart" class="neon-btn pulse">CHẠY LẠI (2s)</button>
+          <button id="btn-to-menu" class="neon-btn secondary">MENU CHÍNH</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Countdown overlay -->
+    <div id="countdown-overlay" class="hidden">
+      <span id="countdown-text">3</span>
+    </div>
+
+    <!-- Pause Indicator -->
+    <div id="pause-overlay" class="hidden">
+      <h2>TẠM DỪNG</h2>
+      <p>Chạm hoặc nhấn ESC để tiếp tục</p>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
