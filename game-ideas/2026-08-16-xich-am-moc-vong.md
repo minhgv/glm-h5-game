@@ -1,0 +1,26 @@
+# Xích Âm: Móc Vọng Cộng Hưởng
+
+- **Ngày:** 2026-08-16
+- **Genre:** Arcade One-Thumb Physics-Swing (Portrait) + Chain-Combo + Procedural Rhythm Scoring
+- **Mô tả:** Neo-luminescent grappling một ngón tay: móc dây năng lượng vào các anchor trôi lên để vung quả cầu ánh sáng xuyên màn đêm vô tận. Mỗi cú móc chuẩn đánh một nốt ngũ cung — chơi càng điêu, bạn càng đang tự sáng tác bản nhạc tăng tiến của chính mình.
+- **Nguồn:** GLM-5.3 (Z.AI Coding Plan)
+
+---
+
+## Master Prompt (Production-Ready)
+
+```text
+/goal STANDING GOAL — ENTERPRISE ARCADE: Ship 'Xích Âm' ở chuẩn thương mại studio: 1 file HTML duy nhất tự chứa 100%, không phụ thuộc mạng/CDN/font/ảnh/âm thanh ngoài, gzipped <120KB, tải và chơi được dưới 2s trên smartphone trung cấp 2020+, vòng chơi 30 giây tạo hook D1 retention, game-feel không thể phân biệt với sản phẩm của studio có vốn đầu tư. Mọi quyết định kỹ thuật phục vụ 3 trụ: Responsive Input <16ms, Readable Motion @60FPS, Addictive 30s Loop.
+
+AUTONOMOUS ITERATION LOOP — agent BẮT BUỘC tự lặp theo chu trình: BUILD -> VERIFY (chạy checklist vòng hiện tại) -> SELF-SCORE (0-10 từng mục) -> nếu có mục <9 thì patch và lặp lại vòng đó (tối đa 5 cycle/vòng) trước khi sang vòng sau; chỉ tuyên bố DONE khi toàn bộ Acceptance Criteria đạt 10/10.
+
+ITERATION 1 — CORE ENGINE: Canvas logic-resolution 1920x1080, HiDPI scale theo devicePixelRatio (cap 2.0) + letterbox an toàn; fixed-step physics accumulator dt=1/120s, render interpolation theo alpha, spiral-of-death guard (max 5 substep/frame); input 1-thumb duy nhất: pointerdown=thả dây móc anchor gần nhất phía trên, pointerup=nhả, giữ=reel-in; pointer events + touch-action:none + preventDefault + chống double-tap-zoom; orb tích phân Verlet, rope constraint chiều dài cứng L: p = anchor + normalize(p - anchor) * L, relax 8 lần mỗi substep; anchor spawn procedural bằng mulberry32 seeded RNG; auto-scroll tăng dần.
+
+ITERATION 2 — ENTERPRISE JUICE: particle pool 512 pre-allocate (zero 'new' trong RAF), trauma-based screen shake (shake = trauma^2, decay 1.8/s, offset noise), hitstop 70-120ms timescale=0 khi near-miss/chord; procedural WebAudio 0-asset: unlockAudio() ở gesture đầu tiên (resume AudioContext), master chain = DynamicsCompressor -> destination; latch note = ngũ cung C (261.63 / 293.66 / 329.63 / 392.00 / 440.00 Hz), mỗi anchor một nốt, dịch +1 octave mỗi 4 combo (cap +3); oscillator triangle + sine sub, ADSR 5/60/250/180ms, lowpass mở 600->1800Hz theo multiplier; percussion = 0.2s noise-buffer qua bandpass khi đứt chain; haptic navigator.vibrate(8) mỗi latch (feature-detect).
+
+ITERATION 3 — ENTERPRISE HARDENING: Visibility API — tab hidden thì pause toàn bộ loop + audio.suspend(), resume có 300ms gain-ramp chống clip; LocalStorage schema versioned {v:1, best, runs, muted, tutorial_done, leaderboard[10]} với try/catch quota; NEAR-MISS: hitbox nguy hiểm thu nhỏ -20% so với visual — chỉ tính PERFECT khi orb đi trong vành vành ngoài mà không chạm lõi; INSTANT REPLAY <150ms sau death: ring buffer 540 state-snapshot (9s @60Hz, packed Float32Array), playback 0.5x tốc độ + trail alpha + vignette, tap để skip thẳng score card; death screen có REPLAY NGAY (restart <50ms) và EXPORT SCORE PNG (render canvas -> download).
+
+ENTERPRISE ACCEPTANCE CRITERIA (nghiệm thu 10/10 mới DONE): (1) Standalone 100% — mở qua file:// vẫn chạy đủ tính năng, 0 request ngoài; (2) 0 asset ngoài — mọi hình vẽ bằng Canvas2D, mọi âm thanh sinh bằng WebAudio node graph; (3) 60 FPS locked — RAF delta histogram 5 phút soak: p95 <= 16.7ms, p99 <= 33ms, không frame nào >100ms; (4) 0 GC allocation trong RAF — không tạo object/array/closure/string trên frame path, chỉ dùng pool + biến scalar tái sử dụng, kiểm chứng bằng Chrome DevTools Allocation instrumentation; (5) Deterministic — cùng seed + cùng input sequence = cùng kết quả (verify bằng replay); (6) 1-thumb hoàn chỉnh, mọi tap target >=48px; (7) physics ổn định ở fallback 30fps (substep tự chia, không tunneling); (8) audio không bao giờ phát trước gesture (không vi phạm autoplay policy).
+
+TECHNICAL BLUEPRINT (GLM tự định nghĩa — agent được tinh chỉnh nhưng không được hạ chuẩn): PALETTE — nền gradient radial 3 stop #0B0E1A -> #1A1033 -> #2D1B4E + nebula vignette alpha 0.35; orb core #FFE066, glow #FF6B9D (shadowBlur 24, pulse 0.8-1.0 theo beat); rope gradient tuyến tính #21D4FD -> #B537F2 theo tension; hazard #FF3B5C outline #FF8FA3; anchor 5 màu HSL (hue 190/265/320/45/110, s90 l60), mỗi màu map 1 nốt ngũ cung. PHYSICS — scale S = canvasHeight/1080; gravity 2200*S px/s^2; latch giữ 80% vận tốc tangential + boost 15% hướng swing; reel-in 240*S px/s khi giữ; auto-scroll 140 -> 420*S px/s (+8%/10s smoothstep); spawn anchor: dọc 260-420*S, lệch ngang trong [-0.38,0.38]*width, xác suất hazard kề anchor tăng theo depth tier (0% -> 45% cap). COMBO — cửa sổ giữ chain 1.8s; multiplier x1 -> x8 (mỗi 3 latch +1); PERFECT near-miss +250 điểm, hitstop, trauma +0.4; chain >= 4 anchor cùng màu = RESONANCE CHORD: shockwave bán kính 260*S phá mọi hazard, +1000*multiplier, flash trắng 60ms; đứt chain: reset multiplier + pitch-drop 220->110Hz trong 300ms. SCORE = depth (1đ/px) + 100*multiplier mỗi latch + near-miss + chord; leaderboard local top-10. DEATH — orb rơi dưới đáy viewport 120*S px; trình tự Death -> Instant Replay -> Score Card hoàn tất tổng <150ms.
+```
