@@ -1,45 +1,77 @@
 # AGENTS.md — Quy tắc bắt buộc cho Coding Agent (OpenCode / GLM-5.3)
 
-> Repository: `glm-h5-game` (Monorepo H5 Mini-Games)
-> Model chủ lực: **GLM-5.3** (Z.AI Coding Plan)
+> **Repository:** `glm-h5-game` (Monorepo H5 Mini-Games)  
+> **Model chủ lực:** **GLM-5.3** (Z.AI Coding Plan / OpenCode)  
+> **Tiêu chuẩn chất lượng:** **Enterprise Arcade Studio Standard** (Zero-Build, 60 FPS Locked, Native WebAudio, Zero External Assets)
 
 ---
 
-## 1. Triết lý phát triển & Tiêu chuẩn chất lượng (MANDATORY)
+## 1. Triết lý phát triển & 6 Quy tắc kỹ thuật bất khả xâm phạm (Non-Negotiable)
 
-- **Chuẩn hình ảnh Full HD 1080p Canvas & Procedural Art:**
-  - Không vẽ hình khối cơ bản đơn sắc (cấm pixel/học sinh/prototype).
-  - Sử dụng Canvas 2D / WebGL / CSS hiện đại với subpixel antialiasing (`ctx.imageSmoothingEnabled = true`, `imageSmoothingQuality = "high"`).
-  - Render procedural vector, gradient đa tầng, shadow blur (rune/neon glow), particle effects (tia lửa, khói, bụi, vỡ mảnh).
-- **Trải nghiệm Ergonomics & Mobile-First:**
-  - Thiết kế Portrait Mobile-First (tối ưu touch), tự động scale responsive mượt mà trên cả Desktop (max-width container).
-  - Độ trễ phản xạ người chơi: **250ms – 350ms**, trọng lực và quán tính được tune êm ái, tránh giật cục.
-  - Hitbox công bằng: Giảm 20% bounding box collision để tạo khoảnh khắc né sát nút (Near-Miss) kịch tính.
-- **WebAudio Procedural SFX (0 external asset bytes):**
-  - Sử dụng WebAudio API oscillator + GainNode cho mọi âm thanh (nhấn nút, nảy, ăn điểm, game over, combo).
-  - Tự động tích hợp cơ chế `unlockAudio()` khi người chơi chạm màn hình lần đầu để vượt rào cản Autoplay trên Mobile Safari/Chrome.
+Mọi game sản xuất trong repository này phải đạt tiêu chuẩn thương mại hóa (Shippable), hoạt động mượt mà trên thiết bị di động tầm trung, không lỗi State Machine, an toàn âm thanh và hỗ trợ cả Touch lẫn Keyboard.
+
+### 1.1. Zero Build Step & Plain ES Modules
+- Sử dụng cấu trúc module thuần `<script type="module">`.
+- **CẤM** phụ thuộc vào bundler (Webpack/Vite), CDN bên ngoài hoặc `npm install` để chạy game.
+- Toàn bộ game phải chạy được ngay trên bất kỳ Static Web Server nào (`python3 -m http.server`).
+
+### 1.2. Fixed-Timestep Simulation (60Hz) & Interpolated Render
+- Tách biệt hoàn toàn giữa **Vật lý/Logic (`update(step)`)** và **Hiển thị (`render(alpha)`)**:
+  - `step = 1 / 60` (cố định 60Hz). Mọi tính toán vị trí, gia tốc, va chạm chỉ chạy trong `update(step)`.
+  - Hàm `render(alpha)` chỉ nhận hệ số nội suy `alpha` để vẽ, **tuyệt đối không thay đổi trạng thái vật lý** trong hàm render.
+- Giới hạn `maxSubSteps = 5` và `clampDt = 0.25s` để chống hiện tượng *Spiral of Death* khi tab bị giật hoặc người chơi mở DevTools.
+
+### 1.3. Zero-Allocation Hot Loop (Object Pooling)
+- **Khóa cứng 60 FPS — CẤM cấp phát bộ nhớ mới (`new Object()`, `new Array()`) trong `requestAnimationFrame`**:
+  - Toàn bộ Particle VFX, Bullets, Floating Texts, Spawns phải dùng **Object Pool** với dung lượng cấp phát tĩnh định sẵn (Static Pool).
+  - Tái sử dụng hạt cũ qua cơ chế `swap-remove` khi hết vòng đời.
+  - Ngăn chặn hoàn toàn hiện tượng giật cục do Garbage Collection (GC Spikes).
+
+### 1.4. WebAudio Procedural Synthesizer (0 External Assets)
+- 100% âm thanh được sinh động bằng WebAudio API `OscillatorNode` + `GainNode` + `BiquadFilterNode` (không tải file MP3/WAV ngoài):
+  - Hỗ trợ âm sắc pitch-sweep tone (nhảy, ăn điểm, powerup) và filtered noise burst (va chạm, tiếng nổ).
+  - **Lazy Initialization & Autoplay Unlock:** Tự động mở khóa `AudioContext` qua sự kiện `pointerdown` / `touchstart` đầu tiên của người dùng.
+  - Mặc định `masterVolume ≤ 0.4`, hỗ trợ lưu trạng thái Mute.
+
+### 1.5. Responsive Virtual Viewport & Ergonomics
+- Canvas dựng trên một **độ phân giải ảo logic cố định** (ví dụ: `1080 × 1920` cho màn hình dọc Portrait).
+- CSS tự động căn giữa và scale letterbox linh hoạt trên mọi kích thước màn hình điện thoại & Desktop.
+- Bắt buộc gắn thuộc tính CSS `touch-action: none;` trên thẻ canvas để triệt tiêu độ trễ cuộn trang của trình duyệt.
+- **Hitbox công bằng:** Giảm 20% bounding box va chạm của nhân vật so với hình ảnh thực để tạo cảm giác né sát nút (Near-Miss) kịch tính.
+
+### 1.6. Page Visibility API & State Machine
+- Game phải được quản lý qua State Machine rõ ràng: `BOOT ➔ MENU ➔ PLAYING ➔ PAUSED ➔ GAMEOVER`.
+- Tự động gắn listener `document.addEventListener('visibilitychange')`:
+  - Khi ẩn tab: Tự động pause game loop và ngắt AudioContext.
+  - Khi hiện tab: Reset `lastTime = 0` để tránh nhảy vọt frame khi tiếp tục chơi.
+- Lưu trữ điểm cao (Highscore) và cài đặt qua `localStorage` bọc trong `try/catch` an toàn.
 
 ---
 
-## 2. Quy ước cấu trúc thư mục & Độc lập từng Game
+## 2. Quy ước cấu trúc thư mục & Modular 3-File
 
-- Mỗi game được đóng gói trong **một thư mục con riêng biệt**: `games/<game-slug>/`
-- Mỗi thư mục game bắt buộc gồm:
-  1. `PROMPT.md`: Ý tưởng, PRD và Master Prompt ban đầu được sinh ra từ GLM.
-  2. `index.html`: File ứng dụng độc lập chứa toàn bộ cấu trúc HTML5, CSS hiện đại và Engine JS logic.
-  3. `README.md` (tùy chọn): Hướng dẫn chơi và ghi chú kỹ thuật ngắn gọn.
-- **Không phụ thuộc vào CDN bên ngoài không ổn định**: Mọi thuật toán game loop, vật lý, đồ họa vector và âm thanh đều được tự triển khai sạch sẽ (Standalone Native).
+Mỗi tựa game được đóng gói độc lập trong thư mục `games/<slug>/` và chia tách module rõ ràng để chống nghẽn output stream:
+
+```
+games/<slug>/
+├── index.html        # Khung DOM, meta mobile viewport, canvas container, HUD overlay (<200 dòng)
+├── style.css         # CSS responsive layout, typography, animations, HUD layout (<200 dòng)
+├── game.js           # Engine loop, State machine, Input, Audio synth, Particle pool, Logic (<800 dòng)
+├── PROMPT.md         # Master Prompt & PRD đặc tả kỹ thuật gốc từ GLM
+└── README.md         # Hướng dẫn chơi, phím điều khiển, bảng tham số tuning
+```
 
 ---
 
-## 3. Quy trình thực thi & Tự động Verify (0 Prompt)
+## 3. Quy trình thực thi & Kiểm thử tự động (Self-Verification)
 
-1. **Đọc kỹ Master Prompt** trong `PROMPT.md` trước khi code.
-2. **Tự động kiểm thử (Self-Verification):**
-   - Đảm bảo file `index.html` được ghi đầy đủ, không cắt ngắn (`// ... code continues ...`).
-   - Kiểm tra cú pháp JavaScript bằng lệnh: `node --check` (nếu tách file) hoặc validate DOM/JS tags.
-   - Kiểm tra Game Loop 60 FPS requestAnimationFrame không gây memory leak (dọn dẹp event listener, object pooling cho particles).
-3. **Báo cáo kết quả rõ ràng:**
-   - Trạng thái: ✅ DONE
-   - File đã tạo/sửa: `games/<slug>/index.html`
-   - Tính năng đã tích hợp: Gameplay loop, SFX, Highscore localStorage, Particle VFX, Responsive Touch.
+Mỗi khi nhận lệnh code hoàn thiện hoặc nâng cấp game:
+
+1. **Đọc kỹ `PROMPT.md`** để nắm trọn vẹn Gameplay Loop và hệ số cân bằng (Game Balance).
+2. **Triển khai tuần tự qua 3 Giai đoạn (3-Phase Implementation):**
+   - **Phase 1 (Core Engine):** Dựng `index.html`, `style.css`, Canvas rendering context HiDPI và bộ lắng nghe phím/touch.
+   - **Phase 2 (Physics & Gameplay):** Xây dựng vòng lặp Fixed-timestep, logic tương tác, va chạm Near-miss, WebAudio Synth và Object-pooled Particle VFX.
+   - **Phase 3 (Juice & Hardening):** Thêm Screen Shake, Hitstop, Animation Easing, Visibility API tab-pause, lưu Highscore vào LocalStorage và Instant Replay (<150ms).
+3. **Tự động kiểm tra tính toàn vẹn (0 Prompt):**
+   - Chạy lệnh `node --check game.js` đảm bảo không có bất kỳ lỗi cú pháp nào.
+   - Đảm bảo mã nguồn hoàn chỉnh 100%, tuyệt đối không để lại code stub hay comment dở dang (`// TODO...`).
